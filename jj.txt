@@ -1,0 +1,1691 @@
+
+
+Q1 – Student Form with DatePicker and Checkboxes
+
+// main.dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(home: StudentForm());
+  }
+}
+
+class StudentForm extends StatefulWidget {
+  @override
+  State<StudentForm> createState() => _StudentFormState();
+}
+
+class _StudentFormState extends State<StudentForm> {
+  final TextEditingController _idController = TextEditingController();
+  DateTime? _selectedDate;
+  bool _flutter = false, _java = false, _dotNet = false;
+  String _result = '';
+
+  // Opens the date picker dialog
+  Future<void> _pickDate() async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1990),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+    }
+  }
+
+  void _showInfo() {
+    List<String> skills = [];
+    if (_flutter) skills.add('Flutter');
+    if (_java) skills.add('Java');
+    if (_dotNet) skills.add('.NET');
+
+    setState(() {
+      _result =
+          'Student Id: ${_idController.text}\n'
+          'Date of Birth: ${_selectedDate != null ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}' : 'Not selected'}\n'
+          'Skills: ${skills.join(', ')}';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Student Form')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Student ID input
+            TextField(
+              controller: _idController,
+              decoration: const InputDecoration(
+                labelText: 'Student Id',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Date picker row
+            Row(
+              children: [
+                Text(
+                  _selectedDate == null
+                      ? 'Select Date of Birth'
+                      : 'DOB: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: _pickDate,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Skills checkboxes
+            const Text('Skills:', style: TextStyle(fontWeight: FontWeight.bold)),
+            CheckboxListTile(
+              title: const Text('Flutter'),
+              value: _flutter,
+              onChanged: (val) => setState(() => _flutter = val!),
+            ),
+            CheckboxListTile(
+              title: const Text('Java'),
+              value: _java,
+              onChanged: (val) => setState(() => _java = val!),
+            ),
+            CheckboxListTile(
+              title: const Text('.NET'),
+              value: _dotNet,
+              onChanged: (val) => setState(() => _dotNet = val!),
+            ),
+
+            // Show button
+            ElevatedButton(onPressed: _showInfo, child: const Text('Show')),
+            const SizedBox(height: 12),
+
+            // Result display
+            TextField(
+              readOnly: true,
+              maxLines: 4,
+              controller: TextEditingController(text: _result),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q2 – Three Sliders (1–5) and Show Max
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: SliderScreen());
+}
+
+class SliderScreen extends StatefulWidget {
+  @override
+  State<SliderScreen> createState() => _SliderScreenState();
+}
+
+class _SliderScreenState extends State<SliderScreen> {
+  double a = 1, b = 1, c = 1;
+  String result = '';
+
+  Widget _buildSlider(String label, double value, ValueChanged<double> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('$label = ${value.toInt()}'),
+        Slider(
+          value: value,
+          min: 1,
+          max: 5,
+          divisions: 4,      // Only steps: 1,2,3,4,5
+          label: value.toInt().toString(),
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Slider Max')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildSlider('a', a, (val) => setState(() => a = val)),
+            _buildSlider('b', b, (val) => setState(() => b = val)),
+            _buildSlider('c', c, (val) => setState(() => c = val)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                int max = [a, b, c].map((e) => e.toInt()).reduce((x, y) => x > y ? x : y);
+                setState(() => result = 'Max = $max');
+              },
+              child: const Text('Show Max'),
+            ),
+            const SizedBox(height: 12),
+            Text(result, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q3 – Login with 4-Digit PIN (Multi-Screen)
+
+```dart
+// main.dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: LoginScreen());
+}
+
+// --- Login Screen ---
+class LoginScreen extends StatefulWidget {
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _usernameCtrl = TextEditingController();
+  final List<TextEditingController> _pinCtrl =
+      List.generate(4, (_) => TextEditingController());
+
+  void _login() {
+    String username = _usernameCtrl.text.trim();
+    String pin = _pinCtrl.map((c) => c.text.trim()).join();
+
+    if (username == 'admin' && pin == '2121') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => WelcomeScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid credentials!')),
+      );
+    }
+  }
+
+  void _reset() {
+    _usernameCtrl.clear();
+    for (var c in _pinCtrl) c.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Login')),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            TextField(
+              controller: _usernameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Username',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Enter 4-digit PIN:'),
+            const SizedBox(height: 8),
+
+            // Four PIN boxes side by side
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: List.generate(4, (i) {
+                return SizedBox(
+                  width: 60,
+                  child: TextField(
+                    controller: _pinCtrl[i],
+                    maxLength: 1,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    decoration: const InputDecoration(
+                      counterText: '',        // hides the char counter
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(onPressed: _login, child: const Text('Login')),
+                ElevatedButton(onPressed: _reset, child: const Text('Reset')),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- Welcome Screen ---
+class WelcomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Welcome')),
+      body: const Center(
+        child: Text('Welcome', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q4 – Range Numbers in ListView
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: RangeScreen());
+}
+
+class RangeScreen extends StatefulWidget {
+  @override
+  State<RangeScreen> createState() => _RangeScreenState();
+}
+
+class _RangeScreenState extends State<RangeScreen> {
+  final _startCtrl = TextEditingController();
+  final _endCtrl = TextEditingController();
+  List<int> _numbers = [];
+
+  void _showRange() {
+    int? start = int.tryParse(_startCtrl.text);
+    int? end = int.tryParse(_endCtrl.text);
+    if (start == null || end == null || start > end) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter valid start and end numbers')),
+      );
+      return;
+    }
+    setState(() {
+      _numbers = List.generate(end - start + 1, (i) => start + i);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Range Numbers')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: _startCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Starting Number',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _endCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Ending Number',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(onPressed: _showRange, child: const Text('Show Range')),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _numbers.length,
+                itemBuilder: (ctx, i) => ListTile(
+                  title: Text(_numbers[i].toString()),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q5 – Attendance App
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: AttendanceScreen());
+}
+
+class AttendanceScreen extends StatefulWidget {
+  @override
+  State<AttendanceScreen> createState() => _AttendanceScreenState();
+}
+
+class _AttendanceScreenState extends State<AttendanceScreen> {
+  DateTime _selectedDate = DateTime.now();
+  String _subject = 'Maths';
+
+  // Students per subject
+  final Map<String, List<String>> _studentMap = {
+    'Maths': ['Vikas', 'Rohan', 'Tanisha', 'Rucha', 'Pavan'],
+    'Science': ['Harsh', 'Ved', 'Vihan', 'Chinar', 'Dev'],
+  };
+
+  // Track attendance: true = present
+  Map<String, bool> _attendance = {};
+
+  String _presentText = '';
+  String _absentText = '';
+  int _presentCount = 0;
+  int _absentCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _initAttendance();
+  }
+
+  void _initAttendance() {
+    _attendance = {for (var s in _studentMap[_subject]!) s: false};
+  }
+
+  Future<void> _pickDate() async {
+    DateTime today = DateTime.now();
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: today,
+      // Can only select today or tomorrow
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 1)),
+    );
+    if (picked != null) setState(() => _selectedDate = picked);
+  }
+
+  void _submit() {
+    String dateStr =
+        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+    List<String> present = _attendance.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .toList();
+    List<String> absent = _attendance.entries
+        .where((e) => !e.value)
+        .map((e) => e.key)
+        .toList();
+
+    setState(() {
+      _presentCount = present.length;
+      _absentCount = absent.length;
+      _presentText =
+          'Date: $dateStr, Subject: $_subject\nPresent Students:\n${present.join('\n')}';
+      _absentText =
+          'Date: $dateStr, Subject: $_subject\nAbsent Students:\n${absent.join('\n')}';
+    });
+  }
+
+  void _reset() {
+    setState(() {
+      _presentText = '';
+      _absentText = '';
+      _presentCount = 0;
+      _absentCount = 0;
+      _initAttendance();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String dateStr =
+        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Attendance')),
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            // Top row: date and subject
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _pickDate,
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Date',
+                        border: OutlineInputBorder(),
+                      ),
+                      child: Text(dateStr),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _subject,
+                    decoration: const InputDecoration(
+                      labelText: 'Subject',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ['Maths', 'Science']
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                        .toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _subject = val!;
+                        _initAttendance();
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Student checkboxes
+            Expanded(
+              child: ListView(
+                children: _studentMap[_subject]!.map((student) {
+                  return CheckboxListTile(
+                    title: Text(student),
+                    value: _attendance[student] ?? false,
+                    onChanged: (val) =>
+                        setState(() => _attendance[student] = val!),
+                  );
+                }).toList(),
+              ),
+            ),
+
+            // Submit / Reset buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(onPressed: _submit, child: const Text('Submit')),
+                ElevatedButton(onPressed: _reset, child: const Text('Reset')),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Badges row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Badge(
+                  label: Text('$_presentCount'),
+                  child: const Chip(label: Text('Present')),
+                ),
+                Badge(
+                  label: Text('$_absentCount'),
+                  child: const Chip(label: Text('Absent')),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Result text fields side by side
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    readOnly: true,
+                    maxLines: 6,
+                    controller: TextEditingController(text: _presentText),
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    readOnly: true,
+                    maxLines: 6,
+                    controller: TextEditingController(text: _absentText),
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q6 – Appointment Booking App
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: AppointmentScreen());
+}
+
+class AppointmentScreen extends StatefulWidget {
+  @override
+  State<AppointmentScreen> createState() => _AppointmentScreenState();
+}
+
+class _AppointmentScreenState extends State<AppointmentScreen> {
+  DateTime _selectedDate = DateTime.now();
+  String? _selectedSlot;
+  final List<String> _slots = ['10 to 11', '11 to 12', '12 to 1', '4 to 5', '5 to 6', '6 to 7'];
+  final List<String> _bookings = [];
+  String _message = '';
+
+  Future<void> _pickDate() async {
+    DateTime today = DateTime.now();
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: today,
+      firstDate: today,       // Only today allowed
+      lastDate: today,
+    );
+    if (picked != null) setState(() => _selectedDate = picked);
+  }
+
+  void _book() {
+    if (_selectedSlot == null) {
+      setState(() => _message = 'Please select a slot');
+      return;
+    }
+    String dateStr =
+        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+    String entry = '$dateStr - $_selectedSlot';
+
+    if (_bookings.contains(entry)) {
+      setState(() => _message = 'Slot not available');
+    } else {
+      setState(() {
+        _bookings.add(entry);
+        _message = '';
+      });
+    }
+  }
+
+  void _reset() {
+    setState(() {
+      _bookings.clear();
+      _message = '';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String dateStr =
+        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Appointment Booking')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Date selector
+            GestureDetector(
+              onTap: _pickDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Date',
+                  border: OutlineInputBorder(),
+                ),
+                child: Text(dateStr),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Slot dropdown
+            DropdownButtonFormField<String>(
+              value: _selectedSlot,
+              hint: const Text('Select Time Slot'),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+              items: _slots
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                  .toList(),
+              onChanged: (val) => setState(() => _selectedSlot = val),
+            ),
+            const SizedBox(height: 12),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(onPressed: _book, child: const Text('Book')),
+                ElevatedButton(onPressed: _reset, child: const Text('Reset')),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Badge for total bookings
+            Badge(
+              label: Text('${_bookings.length}'),
+              child: const Chip(label: Text('Total Booked')),
+            ),
+            const SizedBox(height: 8),
+
+            if (_message.isNotEmpty)
+              Text(_message, style: const TextStyle(color: Colors.red)),
+
+            Expanded(
+              child: ListView.builder(
+                itemCount: _bookings.length,
+                itemBuilder: (ctx, i) => ListTile(
+                  leading: const Icon(Icons.event_available),
+                  title: Text(_bookings[i]),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q7 – Food Shop Sales Tracker
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: FoodSalesScreen());
+}
+
+class FoodItem {
+  final String name;
+  final int unitPrice;
+  final int initialStock;
+  int sold;
+  int? selectedQty;
+
+  FoodItem({
+    required this.name,
+    required this.unitPrice,
+    required this.initialStock,
+    this.sold = 0,
+    this.selectedQty,
+  });
+
+  int get remaining => initialStock - sold;
+  int get totalSaleAmount => sold * unitPrice;
+  int get targetAmount => initialStock * unitPrice;
+}
+
+class FoodSalesScreen extends StatefulWidget {
+  @override
+  State<FoodSalesScreen> createState() => _FoodSalesScreenState();
+}
+
+class _FoodSalesScreenState extends State<FoodSalesScreen> {
+  final List<FoodItem> items = [
+    FoodItem(name: 'Breakfast', unitPrice: 40, initialStock: 30),
+    FoodItem(name: 'Lunch', unitPrice: 80, initialStock: 40),
+    FoodItem(name: 'Dinner', unitPrice: 60, initialStock: 30),
+  ];
+
+  // Available qty options based on remaining stock
+  List<int> _getQtyOptions(FoodItem item) {
+    return List.generate(5, (i) => i + 1)
+        .where((q) => q <= item.remaining)
+        .toList();
+  }
+
+  void _placeOrder(FoodItem item) {
+    if (item.selectedQty == null) return;
+    setState(() {
+      item.sold += item.selectedQty!;
+      item.selectedQty = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    int totalTarget = items.fold(0, (sum, i) => sum + i.targetAmount);
+    int totalSold = items.fold(0, (sum, i) => sum + i.totalSaleAmount);
+    int totalRemaining = totalTarget - totalSold;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Food Sales Tracker')),
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            // Items table
+            Table(
+              columnWidths: const {
+                0: FlexColumnWidth(2),
+                1: FlexColumnWidth(2),
+                2: FlexColumnWidth(2),
+                3: FlexColumnWidth(2),
+                4: FlexColumnWidth(2),
+                5: FlexColumnWidth(2),
+              },
+              border: TableBorder.all(),
+              children: [
+                const TableRow(children: [
+                  Padding(padding: EdgeInsets.all(4), child: Text('Item', style: TextStyle(fontWeight: FontWeight.bold))),
+                  Padding(padding: EdgeInsets.all(4), child: Text('Qty', style: TextStyle(fontWeight: FontWeight.bold))),
+                  Padding(padding: EdgeInsets.all(4), child: Text('Price', style: TextStyle(fontWeight: FontWeight.bold))),
+                  Padding(padding: EdgeInsets.all(4), child: Text('Order', style: TextStyle(fontWeight: FontWeight.bold))),
+                  Padding(padding: EdgeInsets.all(4), child: Text('Sold', style: TextStyle(fontWeight: FontWeight.bold))),
+                  Padding(padding: EdgeInsets.all(4), child: Text('Left', style: TextStyle(fontWeight: FontWeight.bold))),
+                ]),
+                ...items.map((item) {
+                  List<int> options = _getQtyOptions(item);
+                  int totalPrice = (item.selectedQty ?? 0) * item.unitPrice;
+                  return TableRow(children: [
+                    Padding(padding: const EdgeInsets.all(4), child: Text(item.name)),
+                    // Quantity dropdown
+                    DropdownButton<int>(
+                      value: item.selectedQty,
+                      hint: const Text('-'),
+                      items: options
+                          .map((q) => DropdownMenuItem(value: q, child: Text('$q')))
+                          .toList(),
+                      onChanged: (val) => setState(() => item.selectedQty = val),
+                    ),
+                    Padding(padding: const EdgeInsets.all(4), child: Text('₹$totalPrice')),
+                    IconButton(
+                      icon: const Icon(Icons.add_shopping_cart),
+                      onPressed: item.selectedQty != null ? () => _placeOrder(item) : null,
+                    ),
+                    Padding(padding: const EdgeInsets.all(4), child: Text('${item.sold}')),
+                    // Badge for remaining qty
+                    Badge(
+                      label: Text('${item.remaining}'),
+                      child: const Icon(Icons.inventory),
+                    ),
+                  ]);
+                }),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Sale summary
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    Text('Total Target: ₹$totalTarget'),
+                    Text('Total Achieved: ₹$totalSold',
+                        style: const TextStyle(color: Colors.green)),
+                    Text('Total Remaining: ₹$totalRemaining',
+                        style: const TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q8 – Auditorium Seat Booking
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: AuditoriumScreen());
+}
+
+// Seat status
+enum SeatStatus { available, selected, booked }
+
+class AuditoriumScreen extends StatefulWidget {
+  @override
+  State<AuditoriumScreen> createState() => _AuditoriumScreenState();
+}
+
+class _AuditoriumScreenState extends State<AuditoriumScreen> {
+  // Row A=800, B=600, C=500
+  final Map<String, int> _rowPrices = {'A': 800, 'B': 600, 'C': 500};
+
+  // Seat status map: e.g. 'A1' -> SeatStatus.available
+  final Map<String, SeatStatus> _seats = {
+    for (var row in ['A', 'B', 'C'])
+      for (var num in [1, 2, 3, 4, 5]) '${row}${num}': SeatStatus.available
+  };
+
+  void _onSeatTap(String seatId) {
+    setState(() {
+      if (_seats[seatId] == SeatStatus.available) {
+        _seats[seatId] = SeatStatus.selected;
+      } else if (_seats[seatId] == SeatStatus.booked) {
+        _seats[seatId] = SeatStatus.selected; // yellow = to be released
+      } else if (_seats[seatId] == SeatStatus.selected) {
+        _seats[seatId] = SeatStatus.available; // deselect
+      }
+    });
+  }
+
+  void _book() {
+    setState(() {
+      _seats.forEach((id, status) {
+        if (status == SeatStatus.selected) {
+          _seats[id] = SeatStatus.booked;
+        }
+      });
+    });
+  }
+
+  void _release() {
+    // Release seats that were clicked while booked (selected again = yellow)
+    setState(() {
+      _seats.forEach((id, status) {
+        if (status == SeatStatus.selected) {
+          _seats[id] = SeatStatus.available;
+        }
+      });
+    });
+  }
+
+  Color _seatColor(SeatStatus status) {
+    switch (status) {
+      case SeatStatus.booked:
+        return Colors.red;
+      case SeatStatus.selected:
+        return Colors.yellow;
+      default:
+        return Colors.grey.shade200;
+    }
+  }
+
+  int get _booked =>
+      _seats.values.where((s) => s == SeatStatus.booked).length;
+  int get _available =>
+      _seats.values.where((s) => s == SeatStatus.available).length;
+
+  int get _totalEarning {
+    int earning = 0;
+    _seats.forEach((id, status) {
+      if (status == SeatStatus.booked) {
+        String row = id[0]; // 'A', 'B', or 'C'
+        earning += _rowPrices[row]!;
+      }
+    });
+    return earning;
+  }
+
+  Widget _buildSeatRow(String row) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (i) {
+        String seatId = '${row}${i + 1}';
+        return GestureDetector(
+          onTap: () => _onSeatTap(seatId),
+          child: Container(
+            margin: const EdgeInsets.all(4),
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: _seatColor(_seats[seatId]!),
+              border: Border.all(color: Colors.black),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Center(child: Text(seatId)),
+          ),
+        );
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Seat Booking')),
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            _buildSeatRow('A'),
+            _buildSeatRow('B'),
+            _buildSeatRow('C'),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: _book,
+                    child: const Text('Book', style: TextStyle(color: Colors.white))),
+                ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                    onPressed: _release,
+                    child: const Text('Release', style: TextStyle(color: Colors.white))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text('Total Seats Booked: $_booked'),
+            Text('Total Seats Available: $_available'),
+            Text('Total Earning: ₹$_totalEarning',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q9 – Food Order with Select All Checkbox
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: FoodOrderScreen());
+}
+
+class FoodOrderScreen extends StatefulWidget {
+  @override
+  State<FoodOrderScreen> createState() => _FoodOrderScreenState();
+}
+
+class _FoodOrderScreenState extends State<FoodOrderScreen> {
+  bool _selectAll = false;
+  bool _pizza = false;
+  bool _fries = false;
+  bool _coldDrink = false;
+
+  void _onSelectAll(bool? val) {
+    setState(() {
+      _selectAll = val!;
+      _pizza = val;
+      _fries = val;
+      _coldDrink = val;
+    });
+  }
+
+  void _updateSelectAll() {
+    _selectAll = _pizza && _fries && _coldDrink;
+  }
+
+  int get _total {
+    int t = 0;
+    if (_pizza) t += 250;
+    if (_fries) t += 80;
+    if (_coldDrink) t += 50;
+    return t;
+  }
+
+  String get _selectedItems {
+    List<String> items = [];
+    if (_pizza) items.add('Pizza (₹250)');
+    if (_fries) items.add('French Fries (₹80)');
+    if (_coldDrink) items.add('Colddrink (₹50)');
+    return items.isEmpty ? 'None' : items.join(', ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Food Order')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CheckboxListTile(
+              title: const Text('Select All'),
+              value: _selectAll,
+              onChanged: _onSelectAll,
+            ),
+            CheckboxListTile(
+              title: const Text('Pizza (₹250)'),
+              value: _pizza,
+              onChanged: (val) {
+                setState(() {
+                  _pizza = val!;
+                  _updateSelectAll();
+                });
+              },
+            ),
+            CheckboxListTile(
+              title: const Text('French Fries (₹80)'),
+              value: _fries,
+              onChanged: (val) {
+                setState(() {
+                  _fries = val!;
+                  _updateSelectAll();
+                });
+              },
+            ),
+            CheckboxListTile(
+              title: const Text('Colddrink (₹50)'),
+              value: _coldDrink,
+              onChanged: (val) {
+                setState(() {
+                  _coldDrink = val!;
+                  _updateSelectAll();
+                });
+              },
+            ),
+            const Divider(),
+            Text('Selected Items: $_selectedItems'),
+            Text('Total Price: ₹$_total',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q10 – Two Tabs: Row vs Column Images
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Tabs Demo'),
+            bottom: const TabBar(tabs: [
+              Tab(text: 'Row Images'),
+              Tab(text: 'Column Images'),
+            ]),
+          ),
+          body: TabBarView(children: [
+            // Tab 1: images side by side (Row)
+            Container(
+              color: Colors.lightBlue.shade100,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Image.network('https://picsum.photos/seed/1/100/100'),
+                  Image.network('https://picsum.photos/seed/2/100/100'),
+                  Image.network('https://picsum.photos/seed/3/100/100'),
+                ],
+              ),
+            ),
+            // Tab 2: images stacked (Column)
+            Container(
+              color: Colors.lightGreen.shade100,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Image.network('https://picsum.photos/seed/4/100/100'),
+                  Image.network('https://picsum.photos/seed/5/100/100'),
+                  Image.network('https://picsum.photos/seed/6/100/100'),
+                ],
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q11 – Multi-Screen Login App (3 screens)
+
+**login.dart**
+```dart
+import 'package:flutter/material.dart';
+import 'welcome.dart';
+import 'errormsg.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: LoginScreen());
+}
+
+class LoginScreen extends StatefulWidget {
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _userCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+
+  void _login() {
+    if (_userCtrl.text == 'admin' && _passCtrl.text == 'admin') {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => WelcomeScreen()));
+    } else {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => ErrorScreen()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Login')),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(children: [
+          TextField(controller: _userCtrl,
+              decoration: const InputDecoration(labelText: 'Username', border: OutlineInputBorder())),
+          const SizedBox(height: 12),
+          TextField(controller: _passCtrl, obscureText: true,
+              decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder())),
+          const SizedBox(height: 16),
+          ElevatedButton(onPressed: _login, child: const Text('Login')),
+        ]),
+      ),
+    );
+  }
+}
+```
+
+**welcome.dart**
+```dart
+import 'package:flutter/material.dart';
+
+class WelcomeScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Welcome')),
+      body: const Center(
+        child: Text('Welcome', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+}
+```
+
+**errormsg.dart**
+```dart
+import 'package:flutter/material.dart';
+import 'login.dart';
+
+class ErrorScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Error')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Invalid credentials!',
+                style: TextStyle(color: Colors.red, fontSize: 20)),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pushReplacement(
+                  context, MaterialPageRoute(builder: (_) => LoginScreen())),
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q12 – Smart Home Bulb Control with Checkboxes
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: BulbScreen());
+}
+
+class BulbScreen extends StatefulWidget {
+  @override
+  State<BulbScreen> createState() => _BulbScreenState();
+}
+
+class _BulbScreenState extends State<BulbScreen> {
+  final Map<String, bool> _lights = {
+    'Hall': false,
+    'Kitchen': false,
+    'Bedroom': false,
+    'Lobby': false,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Smart Home Lights')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: _lights.keys.map((room) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Bulb icon: yellow if ON, grey if OFF
+                Icon(
+                  Icons.lightbulb,
+                  color: _lights[room]! ? Colors.yellow : Colors.grey,
+                  size: 40,
+                ),
+                Text(room, style: const TextStyle(fontSize: 18)),
+                Checkbox(
+                  value: _lights[room],
+                  onChanged: (val) => setState(() => _lights[room] = val!),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q13 – EMI Calculator with Sliders
+
+**Formula:** `EMI = [P × r × (1+r)^n] / [(1+r)^n - 1]`  
+where P = principal, r = monthly rate, n = months
+
+```dart
+import 'package:flutter/material.dart';
+import 'dart:math';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: EMICalculator());
+}
+
+class EMICalculator extends StatefulWidget {
+  @override
+  State<EMICalculator> createState() => _EMICalculatorState();
+}
+
+class _EMICalculatorState extends State<EMICalculator> {
+  double _loanAmount = 50000;
+  double _term = 1;        // in years
+  double _rate = 8;         // in %
+
+  double _calculateEMI() {
+    double p = _loanAmount;
+    double r = _rate / 100 / 12;   // monthly rate
+    int n = (_term * 12).toInt();  // total months
+    double emi = (p * r * pow(1 + r, n)) / (pow(1 + r, n) - 1);
+    return emi;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double emi = _calculateEMI();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('EMI Calculator')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Loan Amount: ₹${_loanAmount.toInt()}'),
+            Slider(
+              value: _loanAmount,
+              min: 50000,
+              max: 500000,
+              divisions: 90,
+              label: '₹${_loanAmount.toInt()}',
+              onChanged: (val) => setState(() => _loanAmount = val),
+            ),
+            Text('Term: ${_term.toInt()} year(s)'),
+            Slider(
+              value: _term,
+              min: 1,
+              max: 3,
+              divisions: 2,
+              label: '${_term.toInt()} yr',
+              onChanged: (val) => setState(() => _term = val),
+            ),
+            Text('Rate of Interest: ${_rate.toStringAsFixed(1)}%'),
+            Slider(
+              value: _rate,
+              min: 8,
+              max: 12,
+              divisions: 8,
+              label: '${_rate.toStringAsFixed(1)}%',
+              onChanged: (val) => setState(() => _rate = val),
+            ),
+            const Divider(),
+            const SizedBox(height: 10),
+            Text(
+              'Monthly EMI: ₹${emi.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.indigo),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q14 – Dependent Dropdowns (State → City) + Radio Buttons Variant
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: StateCityScreen());
+}
+
+class StateCityScreen extends StatefulWidget {
+  @override
+  State<StateCityScreen> createState() => _StateCityScreenState();
+}
+
+class _StateCityScreenState extends State<StateCityScreen> {
+  final Map<String, List<String>> _stateCities = {
+    'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara'],
+    'Maharashtra': ['Mumbai', 'Pune', 'Nagpur'],
+    'Rajasthan': ['Jaipur', 'Jodhpur', 'Udaipur'],
+  };
+
+  String? _selectedState;
+  String? _selectedCity;      // For dropdown version
+  String? _selectedCityRadio; // For radio button version
+  bool _showRadio = true;     // Toggle between modes
+
+  @override
+  Widget build(BuildContext context) {
+    List<String> cities =
+        _selectedState != null ? _stateCities[_selectedState!]! : [];
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('State → City')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Toggle mode button
+            ElevatedButton(
+              onPressed: () => setState(() {
+                _showRadio = !_showRadio;
+                _selectedCity = null;
+                _selectedCityRadio = null;
+              }),
+              child: Text(_showRadio ? 'Switch to Dropdown' : 'Switch to Radio'),
+            ),
+            const SizedBox(height: 16),
+
+            // State Dropdown (always shown)
+            DropdownButtonFormField<String>(
+              value: _selectedState,
+              hint: const Text('Select State'),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+              items: _stateCities.keys
+                  .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                  .toList(),
+              onChanged: (val) => setState(() {
+                _selectedState = val;
+                _selectedCity = null;
+                _selectedCityRadio = null;
+              }),
+            ),
+            const SizedBox(height: 16),
+
+            // City selection: Dropdown OR Radio buttons
+            if (_selectedState != null) ...[
+              if (!_showRadio) ...[
+                // Dropdown mode
+                DropdownButtonFormField<String>(
+                  value: _selectedCity,
+                  hint: const Text('Select City'),
+                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  items: cities
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) => setState(() => _selectedCity = val),
+                ),
+                const SizedBox(height: 12),
+                if (_selectedCity != null)
+                  Text('Selected City: $_selectedCity',
+                      style: const TextStyle(fontSize: 18)),
+              ] else ...[
+                // Radio button mode
+                ...cities.map((city) => RadioListTile<String>(
+                      title: Text(city),
+                      value: city,
+                      groupValue: _selectedCityRadio,
+                      onChanged: (val) =>
+                          setState(() => _selectedCityRadio = val),
+                    )),
+                if (_selectedCityRadio != null)
+                  Text('Selected City: $_selectedCityRadio',
+                      style: const TextStyle(fontSize: 18)),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+## Q15 – Registration Form
+
+```dart
+import 'package:flutter/material.dart';
+
+void main() => runApp(const MyApp());
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: RegistrationForm());
+}
+
+class RegistrationForm extends StatefulWidget {
+  @override
+  State<RegistrationForm> createState() => _RegistrationFormState();
+}
+
+class _RegistrationFormState extends State<RegistrationForm> {
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
+  String _gender = 'Male';
+  bool _english = true;  // Selected by default
+  bool _gujarati = false;
+  bool _hindi = false;
+  String _result = '';
+
+  void _register() {
+    List<String> langs = [];
+    if (_english) langs.add('English');
+    if (_gujarati) langs.add('Gujarati');
+    if (_hindi) langs.add('Hindi');
+
+    setState(() {
+      _result =
+          'First Name: ${_firstNameCtrl.text}\n'
+          'Last Name: ${_lastNameCtrl.text}\n'
+          'Gender: $_gender\n'
+          'Languages: ${langs.join(', ')}';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Registration Form')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _firstNameCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'First Name', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _lastNameCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'Last Name', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 16),
+
+            // Gender Radio Buttons
+            const Text('Gender:', style: TextStyle(fontWeight: FontWeight.bold)),
+            Row(
+              children: ['Male', 'Female', 'Other'].map((g) {
+                return Row(
+                  children: [
+                    Radio<String>(
+                        value: g,
+                        groupValue: _gender,
+                        onChanged: (val) => setState(() => _gender = val!)),
+                    Text(g),
+                  ],
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 8),
+
+            // Language Checkboxes
+            const Text('Languages Known:', style: TextStyle(fontWeight: FontWeight.bold)),
+            CheckboxListTile(
+              title: const Text('English'),
+              value: _english,
+              onChanged: (val) => setState(() => _english = val!),
+            ),
+            CheckboxListTile(
+              title: const Text('Gujarati'),
+              value: _gujarati,
+              onChanged: (val) => setState(() => _gujarati = val!),
+            ),
+            CheckboxListTile(
+              title: const Text('Hindi'),
+              value: _hindi,
+              onChanged: (val) => setState(() => _hindi = val!),
+            ),
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                  onPressed: _register, child: const Text('Register')),
+            ),
+            const SizedBox(height: 16),
+
+            // Result display
+            if (_result.isNotEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(_result, style: const TextStyle(fontSize: 16)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
