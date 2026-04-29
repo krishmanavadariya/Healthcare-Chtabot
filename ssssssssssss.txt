@@ -1,0 +1,280 @@
+1. create folder 
+2. check node version
+3. npm init -y
+3. npm install express //install express
+4. npm install cors mongoose
+5.connection code 
+5. <script src="angular.js"> //in frontend
+6. run it node exam.js
+8. run localhost:4000 or 5000 or 3000
+7. run frontend file
+
+
+
+
+<!DOCTYPE html>
+<html ng-app="taskApp">
+<head>
+    <title>Task Manager</title>
+
+    <script src="angular.min.js"></script>
+    <script src="taskModule.js"></script>
+</head>
+
+<body ng-controller="taskCtrl">
+
+<center>
+
+<form ng-submit="addNewTask()">
+
+    Task ID: <input type="text" ng-model="newTask.taskID"><br><br>
+    Task Name: <input type="text" ng-model="newTask.taskName"><br><br>
+
+    Status:
+    <input type="radio" ng-model="newTask.status" value="Started"> Started
+    <input type="radio" ng-model="newTask.status" value="In Progress"> In Progress
+    <input type="radio" ng-model="newTask.status" value="Completed"> Completed
+    <br><br>
+
+    Date:
+    <input type="date" ng-model="newTask.date"><br><br>
+
+    Category:
+    <select ng-model="newTask.category">
+        <option value="Manager">Manager</option>
+        <option value="Employee">Employee</option>
+    </select><br><br>
+
+    Roles:
+    <input type="checkbox" ng-model="roles.employee"> Employee
+    <input type="checkbox" ng-model="roles.manager"> Manager
+    <input type="checkbox" ng-model="roles.owner"> Owner
+    <br><br>
+
+    <button type="submit" ng-disabled="editStat">Add Task</button>
+    <button type="button" ng-click="updateTask(newTask)" ng-disabled="!editStat">Update Task</button>
+
+</form>
+
+<br>
+
+<table border="2">
+<tr>
+    <th>Task ID</th>
+    <th>Task Name</th>
+    <th>Status</th>
+    <th>Date</th>
+    <th>Category</th>
+    <th>Roles</th>
+    <th>Action</th>
+</tr>
+
+<tr ng-repeat="item in task.slice(currentPage*pageSize, (currentPage+1)*pageSize)">
+    <td>{{item.taskID}}</td>
+    <td>{{item.taskName}}</td>
+    <td>{{item.status}}</td>
+    <td>{{item.date}}</td>
+    <td>{{item.category}}</td>
+    <td>{{item.roles ? item.roles.join(', ') : ''}}</td>
+    <td>
+        <button ng-click="deleteTask(item.taskID)">Delete</button>
+        <button ng-click="edit(item)">Edit</button>
+    </td>
+</tr>
+</table>
+
+<br>
+
+<button ng-click="prevPage()">Previous</button>
+<button ng-click="nextPage()">Next</button>
+
+</center>
+
+</body>
+</html>   
+
+
+var app = angular.module('taskApp', []);
+
+app.controller('taskCtrl', function($scope, $http) {
+
+    $scope.newTask = {};
+    $scope.roles = {};
+    $scope.editStat = false;
+
+    $scope.currentPage = 0;
+    $scope.pageSize = 3;
+
+    // READ
+    $scope.readTask = function() {
+        $http.get('/api/taskData').then(function(res) {
+            $scope.task = res.data;
+        });
+    };
+
+    $scope.readTask();
+
+    // ADD
+    $scope.addNewTask = function() {
+
+        let selectedRoles = [];
+
+        if ($scope.roles.employee) selectedRoles.push("Employee");
+        if ($scope.roles.manager) selectedRoles.push("Manager");
+        if ($scope.roles.owner) selectedRoles.push("Owner");
+
+        $scope.newTask.roles = selectedRoles;
+
+        // FIX DATE
+        if ($scope.newTask.date) {
+            $scope.newTask.date = new Date($scope.newTask.date).toISOString().split('T')[0];
+        }
+
+        $http.post('/api/addTask', $scope.newTask).then(function() {
+            $scope.readTask();
+            $scope.newTask = {};
+            $scope.roles = {};
+        });
+    };
+
+    // DELETE
+    $scope.deleteTask = function(id) {
+        $http.delete('/api/deleteTask/' + id).then(function() {
+            $scope.readTask();
+        });
+    };
+
+    // EDIT
+    $scope.edit = function(item) {
+        $scope.newTask = angular.copy(item);
+        $scope.editStat = true;
+
+        $scope.roles = {
+            employee: item.roles && item.roles.includes("Employee"),
+            manager: item.roles && item.roles.includes("Manager"),
+            owner: item.roles && item.roles.includes("Owner")
+        };
+    };
+
+    // UPDATE
+    $scope.updateTask = function(item) {
+
+        let selectedRoles = [];
+
+        if ($scope.roles.employee) selectedRoles.push("Employee");
+        if ($scope.roles.manager) selectedRoles.push("Manager");
+        if ($scope.roles.owner) selectedRoles.push("Owner");
+
+        item.roles = selectedRoles;
+
+        if (item.date) {
+            item.date = new Date(item.date).toISOString().split('T')[0];
+        }
+
+        $http.put('/api/updateTask/' + item.taskID, item).then(function() {
+            $scope.readTask();
+        });
+
+        $scope.editStat = false;
+        $scope.newTask = {};
+        $scope.roles = {};
+    };
+
+    // PAGINATION
+    $scope.nextPage = function() {
+        if (($scope.currentPage + 1) * $scope.pageSize < $scope.task.length) {
+            $scope.currentPage++;
+        }
+    };
+
+    $scope.prevPage = function() {
+        if ($scope.currentPage > 0) {
+            $scope.currentPage--;
+        }
+    };
+
+});    const express = require('express');
+const mongoose = require('mongoose');
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(__dirname));
+
+// 🔗 MongoDB Connection (LOCAL)
+mongoose.connect('mongodb://localhost:27017/moradiya');
+
+mongoose.connection.on('connected', () => {
+    console.log("MongoDB Connected");
+});
+
+
+const taskSchema = new mongoose.Schema({
+    taskID: { type: String, required: true },
+    taskName: { type: String, required: true },
+    status: { type: String, required: true },
+    date: { type: String },
+    category: { type: String },
+    roles: [String]
+});
+
+const taskModel = mongoose.model('taskList', taskSchema);
+
+
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + "/view.html");
+});
+
+// 📖 Read
+app.get('/api/taskData', (req, res) => {
+    taskModel.find().then((data) => {
+        res.send(data);
+    });
+});
+
+// ➕ Insert
+app.post('/api/addTask', (req, res) => {
+    const newTask = req.body;
+
+    taskModel.create(newTask)
+        .then(() => {
+            res.json({ message: "Task Added" });
+        })
+        .catch((err) => {
+            res.json({ message: err });
+        });
+});
+
+// ❌ Delete
+app.delete('/api/deleteTask/:id', (req, res) => {
+    const id = req.params.id;
+
+    taskModel.deleteOne({ taskID: id })
+        .then(() => {
+            res.json({ message: "Task Deleted" });
+        })
+        .catch((err) => {
+            res.json({ message: err });
+        });
+});
+
+// ✏️ Update
+app.put('/api/updateTask/:id', (req, res) => {
+    const id = req.params.id;
+    const updatedTask = req.body;
+
+    taskModel.updateOne({ taskID: id }, updatedTask)
+        .then(() => {
+            res.json({ message: "Task Updated" });
+        })
+        .catch((err) => {
+            res.json({ message: err });
+        });
+});
+
+// 🚀 Server
+app.listen(4000, () => {
+    console.log("Server running on http://localhost:4000");
+});   
