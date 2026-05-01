@@ -1,0 +1,1127 @@
+python project how to create 
+
+step 1 : 
+create virtual environment python -m venv venv
+
+activate scirpts       venv\Scripts\activate
+
+step 2: pip install Django
+        pip install djangorestframework
+
+step 3: django-admin startproject crud
+
+step 4: cd crud
+
+step 5: python manage.py runserver
+
+step 6: copy url like this ( http://127.0.0.1:8000/)
+
+step 7: paste in browser
+
+step 8: if run successfully go ahead
+
+step 9:create application 
+
+step 10:python manage.py startapp crudapp
+
+step 11:code .. (go into visual code)
+
+step 12:go to setting.py file in crud folder
+
+step 13:paste your application name 
+ eg.. INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "crudapp",// like this 
+]
+step 14:Create Model (Database)
+
+step 15: python manage.py makemigrations
+
+step 16: python manage.py migrate
+
+strep 17:open db browser
+
+step 18: open database
+
+step 19: select table name 
+
+step 20:right click and browes table  select 
+
+step 21: select sqlite3 file in your project where you sasve
+
+step 22:go to db browser open databse select sqllite3 file
+
+step 24:create a form (form.py)// in the applications not folder eg.. crudapp
+
+step 25: create Views
+
+step 26:in views.py write insert  code
+
+step 27:in views.py write delete code
+
+step 28:in views.py write update code
+
+step 29:url setup add update delete url in url.py
+
+step 30:add from crudapp import views add into url.py
+
+step 31:create template folder  in applications
+
+step 32: create home.html file and update .html file
+
+step 33:run 
+
+step 34:python manage.py runserver
+
+step 35: paste the link in url in browser
+
+
+
+step:36 for admin panel   python manage.py createsuperuser  write id and password 
+step:37 add this in admin code  
+
+
+from django.contrib import admin
+from .models import Event, Attendee
+
+admin.site.register(Event)//model database table name
+admin.site.register(Attendee)//model database name
+
+
+
+
+Function based 
+
+model.py
+from django.db import models
+
+
+
+class Person(models.Model):
+
+    GENDER_CHOICES = [
+        ("Male", "Male"),
+        ("Female", "Female"),
+        ("Other", "Other"),
+    ]
+
+    name = models.CharField(max_length=100)
+    age = models.IntegerField()
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default="Male")
+    hobbies = models.CharField(max_length=200, default="")
+
+    def __str__(self):
+        return self.name
+
+
+forms.py
+from django import forms
+from .models import Person
+
+
+class PersonForm(forms.ModelForm):
+
+    HOBBY_CHOICES = [
+        ("Travelling", "Travelling"),
+        ("Eating", "Eating"),
+        ("Driving", "Driving"),
+        ("Tracking", "Tracking"),
+    ]
+
+    hobbies = forms.MultipleChoiceField(
+        choices=HOBBY_CHOICES, widget=forms.CheckboxSelectMultiple, required=False
+    )
+
+    class Meta:
+        model = Person
+        fields = ["name", "age", "gender", "hobbies"]
+        widgets = {
+            "gender": forms.RadioSelect,
+        }
+
+
+Home.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <center>
+        <h1>Students Details</h1>
+       <form method="POST">
+       {% csrf_token %}
+        {{form}}
+        <button type="submit">Save</button>
+       </form>
+  <h2>Data</h2>
+       <table border="1" cellpadding="4">
+        <tr>
+            <th>Name</th>
+            <th>Age</th>
+         
+            <th>Gender</th>
+            <th>Hobbies</th>
+            <th>Action</th>
+        </tr>
+        {% for i in data %}
+        <tr>
+            <td>{{i.name}}</td>
+            <td>{{i.age}}</td>
+            <td>{{i.gender}}</td>
+            <td>{{i.hobbies}}</td>
+            <td><a href="/update/{{i.id}}">Edit</a>
+                <a href="/delete/{{i.id}}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+
+       </table>
+    </center>
+</body>
+</html>
+
+Update.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Update</h1>
+    <form method="POST">
+    {% csrf_token %}
+    {{form}}
+    <button type="submit">Update</button>
+    </form>
+</body>
+</html>
+
+
+View.py
+
+from django.shortcuts import render, redirect
+from .models import Person
+from .forms import PersonForm
+
+
+def home(request):
+    form = PersonForm()
+    data = Person.objects.all()
+
+    if request.method == "POST":
+        form = PersonForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.hobbies = ",".join(form.cleaned_data["hobbies"])
+            form.save()
+            return redirect("/")
+    return render(request, "home.html", {"form": form, "data": data})
+
+
+def delete(request, id):
+    person = Person.objects.get(id=id)
+    person.delete()
+    return redirect("/")
+
+
+def update(request, id):
+    person = Person.objects.get(id=id)
+    form = PersonForm(instance=person)
+
+    if request.method == "POST":
+        form = PersonForm(request.POST, instance=person)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.hobbies = ",".join(form.cleaned_data["hobbies"])
+            form.save()
+            return redirect("/")
+    return render(request, "update.html", {"form": form})
+
+
+Urls.py
+
+"""
+URL configuration for crud project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+
+from django.contrib import admin
+from django.urls import path
+from crudapp import views
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", views.home),
+    path("delete/<int:id>/", views.delete),
+    path("update/<int:id>/", views.update),
+]
+
+class based code
+
+Class Based View
+
+models.py
+from django.db import models
+
+
+class Class(models.Model):
+
+    GENDER_CHOICES = [
+        ("Male", "Male"),
+        ("Female", "Female"),
+        ("Other", "Other"),
+    ]
+
+    name = models.CharField(max_length=100)
+    age = models.IntegerField()
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default="Male")
+    hobbies = models.CharField(max_length=200, default="")
+
+    def __str__(self):
+        return self.name
+
+
+forms.py
+
+from django import forms
+from .models import Class
+
+
+class ClassForm(forms.ModelForm):
+
+    HOBBY_CHOICES = [
+        ("Travelling", "Travelling"),
+        ("Eating", "Eating"),
+        ("Driving", "Driving"),
+        ("Tracking", "Tracking"),
+    ]
+
+    hobbies = forms.MultipleChoiceField(
+        choices=HOBBY_CHOICES, widget=forms.CheckboxSelectMultiple, required=False
+    )
+
+    class Meta:
+        model = Class
+        fields = ["name", "age", "gender", "hobbies"]
+        widgets = {
+            "gender": forms.RadioSelect,
+        }
+
+Home.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <center>
+        <h1>Students Details</h1>
+<form method="POST">
+{% csrf_token %}
+        {{form}}
+        <button type="submit">Save</button>
+</form>
+<h2>Data</h2>
+<table border="1" cellpadding="4">
+        <tr>
+            <th>Name</th>
+            <th>Age</th>
+        
+            <th>Gender</th>
+            <th>Hobbies</th>
+            <th>Action</th>
+        </tr>
+{% for i in data %}
+        <tr>
+            <td>{{i.name}}</td>
+            <td>{{i.age}}</td>
+            <td>{{i.gender}}</td>
+            <td>{{i.hobbies}}</td>
+            <td><a href="/update/{{i.id}}">Edit</a>
+                <a href="/delete/{{i.id}}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </table>
+    </center>
+</body>
+</html>
+
+Update.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Update</h1>
+    <form method="POST">
+    {% csrf_token %}
+    {{form}}
+    <button type="submit">Update</button>
+    </form>
+</body>
+</html>
+
+Views.py
+from django.shortcuts import render, redirect
+from django.views import View
+from .models import Class
+from .forms import ClassForm
+
+
+class HomeView(View):
+    def get(self, request):
+        form = ClassForm()
+        data = Class.objects.all()
+        return render(request, "home.html", {"form": form, "data": data})
+
+    def post(self, request):
+        form = ClassForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.hobbies = ",".join(form.cleaned_data["hobbies"])
+            obj.save()
+            return redirect("/")
+        data = Class.objects.all()
+        return render(request, "home.html", {"form": form, "data": data})
+
+
+class UpdateView(View):
+    def get(self, request, id):
+        person = Class.objects.get(id=id)
+        form = ClassForm(instance=person)
+        return render(request, "update.html", {"form": form})
+
+    def post(self, request, id):
+        person = Class.objects.get(id=id)
+        form = ClassForm(request.POST, instance=person)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.hobbies = ",".join(form.cleaned_data["hobbies"])
+            obj.save()
+            return redirect("/")
+        return render(request, "update.html", {"form": form})
+
+
+class DeleteView(View):
+    def get(self, request, id):
+        person = Class.objects.get(id=id)
+        person.delete()
+        return redirect("/")
+Urls.py
+"""
+URL configuration for class project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+
+from django.contrib import admin
+from django.urls import path
+from classapp.views import HomeView, UpdateView, DeleteView
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", HomeView.as_view()),
+    path("update/<int:id>/", UpdateView.as_view()),
+    path("delete/<int:id>/", DeleteView.as_view()),
+]
+
+
+
+
+
+
+APICODE
+
+
+add file name serializers.py in applications and add in setting 
+
+
+model.py
+
+from django.db import models
+
+class Author(models.Model):
+    name = models.CharField(max_length=100)
+    biography = models.TextField()
+    birthdate = models.DateField()
+
+    def __str__(self):
+        return self.name
+
+
+class Book(models.Model):
+    title = models.CharField(max_length=100)
+    isbn = models.CharField(max_length=20)
+    published_date = models.DateField()
+    summary = models.TextField()
+    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
+
+
+
+serializers.py
+
+from rest_framework import serializers
+from .models import Book
+
+class BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = "__all__"
+
+
+
+views.py
+from django.shortcuts import render, redirect
+from .models import Author, Book
+
+from rest_framework import generics
+from .serializers import BookSerializer
+
+# ================= DJANGO VIEWS =================
+
+def add_author(request):
+    if request.method == "POST":
+        name = request.POST["name"]
+        bio = request.POST["bio"]
+        birth = request.POST["birth"]
+
+        Author.objects.create(
+            name=name,
+            biography=bio,
+            birthdate=birth
+        )
+        return redirect("author_list")
+
+    return render(request, "add_author.html")
+
+
+def author_list(request):
+    authors = Author.objects.all()
+    return render(request, "author_list.html", {"authors": authors})
+
+
+def author_detail(request, id):
+    author = Author.objects.get(id=id)
+    books = Book.objects.filter(author=author)
+
+    return render(request, "author_detail.html", {
+        "author": author,
+        "books": books
+    })
+
+
+# ================= DRF API =================
+
+class BookListCreate(generics.ListCreateAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+
+
+class BookDetail(generics.RetrieveUpdateAPIView):
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+
+
+
+html code
+
+add_author.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>Add Author</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    Name: <input type="text" name="name"><br><br>
+    Bio: <textarea name="bio"></textarea><br><br>
+    Birthdate: <input type="date" name="birth"><br><br>
+    <button type="submit">Add</button>
+</form>
+
+<a href="/">Back</a>
+</body>
+</html>
+
+
+author_list.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>Add Author</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    Name: <input type="text" name="name"><br><br>
+    Bio: <textarea name="bio"></textarea><br><br>
+    Birthdate: <input type="date" name="birth"><br><br>
+    <button type="submit">Add</button>
+</form>
+
+<a href="/">Back</a>
+</body>
+</html>
+
+author_details.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>Add Author</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    Name: <input type="text" name="name"><br><br>
+    Bio: <textarea name="bio"></textarea><br><br>
+    Birthdate: <input type="date" name="birth"><br><br>
+    <button type="submit">Add</button>
+</form>
+
+<a href="/">Back</a>
+</body>
+</html>
+
+urls.py 
+
+"""
+URL configuration for library project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.contrib import admin
+from django.urls import path
+from app import views
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+
+    # Django Views
+    path("", views.author_list, name="author_list"),
+    path("add-author/", views.add_author, name="add_author"),
+    path("author/<int:id>/", views.author_detail, name="author_detail"),
+
+    # DRF API
+    path("api/books/", views.BookListCreate.as_view()),
+    path("api/books/<int:pk>/", views.BookDetail.as_view()),
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+admin panel code
+
+python manage.py createsuperuser  in cmd then write id and password 
+
+in admin file we use
+
+
+models.py
+
+
+from django.db import models
+
+class Event(models.Model):
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    date = models.DateField()
+    location = models.CharField(max_length=100)
+    capacity = models.IntegerField()
+
+    def __str__(self):
+        return self.title
+
+
+class Attendee(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    contact_number = models.CharField(max_length=15)
+    registered_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+
+admin.py
+
+from django.contrib import admin
+from .models import Event, Attendee
+
+admin.site.register(Event)
+admin.site.register(Attendee)
+
+
+
+views.py
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Event, Attendee
+
+
+# List all events
+def event_list(request):
+    events = Event.objects.all()
+    return render(request, "event_list.html", {"events": events})
+
+
+# Event detail + registration
+def event_detail(request, id):
+    event = get_object_or_404(Event, id=id)
+
+    if request.method == "POST":
+        name = request.POST["name"]
+        email = request.POST["email"]
+        contact = request.POST["contact"]
+
+        Attendee.objects.create(
+            event=event,
+            name=name,
+            email=email,
+            contact_number=contact
+        )
+
+        return redirect("event_list")
+
+    return render(request, "event_detail.html", {"event": event})
+
+
+
+html code  
+
+event_detail.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>{{ event.title }}</h2>
+
+<p>{{ event.description }}</p>
+<p>Date: {{ event.date }}</p>
+<p>Location: {{ event.location }}</p>
+<p>Capacity: {{ event.capacity }}</p>
+
+<h3>Register</h3>
+
+<form method="POST">
+    {% csrf_token %}
+
+    Name: <input type="text" name="name"><br><br>
+    Email: <input type="email" name="email"><br><br>
+    Contact: <input type="text" name="contact"><br><br>
+
+    <button type="submit">Register</button>
+</form>
+</body>
+</html>
+
+
+event_list.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>Upcoming Events</h2>
+
+{% for e in events %}
+    <h3>{{ e.title }}</h3>
+    <p>{{ e.date }} | {{ e.location }}</p>
+    <a href="/event/{{ e.id }}/">View Details</a>
+    <hr>
+{% endfor %}
+</body>
+</html>
+
+
+
+urls.py
+
+"""
+URL configuration for eventproject project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.contrib import admin
+from django.urls import path
+from app import views
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+
+    path("", views.event_list, name="event_list"),
+    path("event/<int:id>/", views.event_detail, name="event_detail"),
+]
+
+
+how to run it i will tell
+
+python manage.py createsuperuser
+
+
+python manage.py runserver
+
+copy paste http://127.0.0.1:8000/
+then admin in this 
+http://127.0.0.1:8000/admin
+enter  user name and password
+add event and add attendance
+
+
+
+
+
+
+
+Both api and  admin panel  
+
+first install framework
+add in setting
+add file seriliaziers 
+add code in views 
+
+add code in url
+
+
+ then admin panel
+
+add code in admin.py 
+python manage.py createsuperuser
+create id and password
+ id use blank password 12345678
+again write it will not visible and y press
+
+
+python manage.py runserver
+copy paste http://127.0.0.1:8000/
+then admin in this 
+http://127.0.0.1:8000/admin
+enter  user name and password
+add event and add attendance
+
+models.py
+
+from django.db import models
+
+class Event(models.Model):
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    date = models.DateField()
+    location = models.CharField(max_length=100)
+    capacity = models.IntegerField()
+
+    def __str__(self):
+        return self.title
+
+
+class Attendee(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    contact_number = models.CharField(max_length=15)
+    registered_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+admin.py
+
+from django.contrib import admin
+from .models import Event, Attendee
+
+admin.site.register(Event)
+admin.site.register(Attendee)
+
+
+serializers.py
+
+from rest_framework import serializers
+from .models import Event, Attendee
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = "__all__"
+
+
+class AttendeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendee
+        fields = "__all__"
+
+
+views.py
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Event, Attendee
+from rest_framework import generics
+from .serializers import EventSerializer, AttendeeSerializer
+
+
+# ================= API VIEWS =================
+
+# EVENT API
+class EventListCreate(generics.ListCreateAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+
+
+class EventDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+
+
+# ATTENDEE API
+class AttendeeListCreate(generics.ListCreateAPIView):
+    queryset = Attendee.objects.all()
+    serializer_class = AttendeeSerializer
+
+
+class AttendeeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Attendee.objects.all()
+    serializer_class = AttendeeSerializer
+
+
+# ================= DJANGO VIEWS =================
+
+# List all events
+def event_list(request):
+    events = Event.objects.all()
+    return render(request, "event_list.html", {"events": events})
+
+
+# Event detail + registration
+def event_detail(request, id):
+    event = get_object_or_404(Event, id=id)
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        contact = request.POST.get("contact")
+
+        Attendee.objects.create(
+            event=event,
+            name=name,
+            email=email,
+            contact_number=contact
+        )
+
+        return redirect("event_list")
+
+    return render(request, "event_detail.html", {"event": event})
+
+
+
+html code
+
+event_detail.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>{{ event.title }}</h2>
+
+<p>{{ event.description }}</p>
+<p>Date: {{ event.date }}</p>
+<p>Location: {{ event.location }}</p>
+<p>Capacity: {{ event.capacity }}</p>
+
+<h3>Register</h3>
+
+<form method="POST">
+    {% csrf_token %}
+
+    Name: <input type="text" name="name"><br><br>
+    Email: <input type="email" name="email"><br><br>
+    Contact: <input type="text" name="contact"><br><br>
+
+    <button type="submit">Register</button>
+</form>
+</body>
+</html> 
+
+
+
+event_list.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>Upcoming Events</h2>
+
+{% for e in events %}
+    <h3>{{ e.title }}</h3>
+    <p>{{ e.date }} | {{ e.location }}</p>
+    <a href="/event/{{ e.id }}/">View Details</a>
+    <hr>
+{% endfor %}
+</body>
+</html>
+
+urls.py
+
+"""
+URL configuration for eventproject project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/6.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.contrib import admin
+from django.urls import path
+from app import views
+
+urlpatterns = [
+    # Admin Panel
+    path('admin/', admin.site.urls),
+
+    # ================= USER SIDE =================
+    path('', views.event_list, name='event_list'),
+    path('event/<int:id>/', views.event_detail, name='event_detail'),
+
+    # ================= API =================
+    path('api/events/', views.EventListCreate.as_view()),
+    path('api/events/<int:pk>/', views.EventDetail.as_view()),
+
+    path('api/attendees/', views.AttendeeListCreate.as_view()),
+    path('api/attendees/<int:pk>/', views.AttendeeDetail.as_view()),
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
